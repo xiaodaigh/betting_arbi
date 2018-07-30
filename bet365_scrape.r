@@ -3,14 +3,12 @@ library(data.table)
 library(RSelenium)
 
 dr = RSelenium::rsDriver()
-rvest::html_nodes(bet365,"div")
-bet365
 
 drc = dr$client
 
 drc$navigate("https://www.bet365.com.au/home/")
 Sys.sleep(10)
-drc$navigate("https://www.bet365.com.au/#/AC/B1/C1/D13/E40/F138/S1/")
+drc$navigate("https://www.bet365.com.au/#/AC/B1/C1/D13/E40/F137/S1/")
 Sys.sleep(5)
 
 # odds = drc$executeScript(
@@ -133,13 +131,15 @@ get_betfair_tbl <- function() {
   betfair_tbl
 }
 
-betfair_tbl1 = get_betfair_tbl()
-betfair_tbl2 = get_betfair_tbl()
-betfair_tbl3 = get_betfair_tbl()
-betfair_tbl4 = get_betfair_tbl()
-betfair_tbl5 = get_betfair_tbl()
+# betfair_tbl1 = get_betfair_tbl()
+# betfair_tbl2 = get_betfair_tbl()
+# betfair_tbl3 = get_betfair_tbl()
+# betfair_tbl4 = get_betfair_tbl()
+# betfair_tbl5 = get_betfair_tbl()
+# 
+# betfair_tbl = rbindlist(list(betfair_tbl1, betfair_tbl2,betfair_tbl3,betfair_tbl4,betfair_tbl5))
 
-betfair_tbl = rbindlist(list(betfair_tbl1, betfair_tbl2,betfair_tbl3,betfair_tbl4,betfair_tbl5))
+betfair_tbl = get_betfair_tbl()
 
 # merge the two together --------------------------------------------------
 res3 = res2[team1 != ""]
@@ -181,9 +181,6 @@ reject_team1 <- function(bet365id1, bfid1) {
 
 team1_merged[,.(team1, team2_b365, team2_bf, bet365id, bfid)]
 
-reject_team1(130,160)
-reject_team1(130,160)
-
 setnames(res3_unmatched,"team1", "team1_b365")
 setnames(betfair_unmatched,"team1", "team1_bf")
 
@@ -202,7 +199,8 @@ reject_team2 <- function(bet365id1, bfid1) {
 
 team2_merged[,.(team2, team1_b365, team1_bf, bet365id, bfid)]
 
-
+fst::write.fst(team1_merged,paste0("team1_merged",Sys.Date(),".fst"))
+fst::write.fst(team2_merged,paste0("team2_merged",Sys.Date(),".fst"))
 
 
 
