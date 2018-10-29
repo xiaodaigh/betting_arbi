@@ -294,6 +294,7 @@ get_sb_winner_odds <- function() {
 
 # unibet UNI ------------------------------------------------------------
 get_uni_winner_odds <- function(league = c("epl","csl","sweden1","sweden2")) {
+  #browser()
   match.arg(league)
   if(league == "epl") {
     drc$navigate("https://www.unibet.com.au/betting#event/1004799423")
@@ -335,21 +336,35 @@ get_uni_winner_odds <- function(league = c("epl","csl","sweden1","sweden2")) {
   
   # this part is a bit manual but doesn't seem to be better way
   if(league == "epl") {
-    stopifnot(length(res) == 4)
-    setnames(res[[1]],names(res[[1]]), c("selection_company","winner","top4","top6","top10"))
-    setnames(res[[2]],names(res[[2]]), c("selection_company","winner_wo_top6"))
-    setnames(res[[3]],names(res[[3]]), c("selection_company","winner_wo_city"))
-    setnames(res[[4]],names(res[[4]]), c("selection_company","winner_wo_city_liv"))
+    #stopifnot(length(res) == 4)
+    #browser()
     
-    res_all = res[[1]] %>% 
-      merge(res[[2]], by = "selection_company", all =T) %>% 
-      merge(res[[3]], by = "selection_company", all =T) %>% 
-      merge(res[[4]], by = "selection_company", all =T) %>% 
-      gather(key="market", value = "odds_uni", -c("selection_company")) %>% 
-      mutate(selection_b365 = align_team2b365(selection_company), extraction_timestamp = Sys.time(),
-             odds_uni = as.numeric(odds_uni)) %>% 
-      as.data.table
-    return(res_all)
+    if(length(res) == 4) {
+      setnames(res[[1]],names(res[[1]]), c("selection_company","winner","top4","top6","top10"))
+      setnames(res[[2]],names(res[[2]]), c("selection_company","winner_wo_top6"))
+      setnames(res[[3]],names(res[[3]]), c("selection_company","winner_wo_city"))
+      setnames(res[[4]],names(res[[4]]), c("selection_company","winner_wo_city_liv"))
+      
+      res_all = res[[1]] %>% 
+        merge(res[[2]], by = "selection_company", all =T) %>% 
+        merge(res[[3]], by = "selection_company", all =T) %>% 
+        merge(res[[4]], by = "selection_company", all =T) %>% 
+        gather(key="market", value = "odds_uni", -c("selection_company")) %>% 
+        mutate(selection_b365 = align_team2b365(selection_company), extraction_timestamp = Sys.time(),
+               odds_uni = as.numeric(odds_uni)) %>% 
+        as.data.table
+      return(res_all)
+    } else {
+      nr = names(res[[1]])
+      setnames(res[[1]],nr, c("selection_company","winner","top4","top6","top10")[1:length(nr)])
+
+      res_all = res[[1]] %>% 
+        gather(key="market", value = "odds_uni", -c("selection_company")) %>% 
+        mutate(selection_b365 = align_team2b365(selection_company), extraction_timestamp = Sys.time(),
+               odds_uni = as.numeric(odds_uni)) %>% 
+        as.data.table
+      return(res_all)
+    }
   } else if (league%in%c("sweden1","sweden2")) {
     #browser()
     # this one has winner and top 3

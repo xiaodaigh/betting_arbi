@@ -20,18 +20,31 @@ get_matches_odds <- function(url, company_code) {
   }
 }
 
-bf_matches_odds <- function(url) {
+bf_matches_odds <- function(url, goto_football = F) {
   dr <- startChrome()
   drc <- dr$client
+  on.exit(drc$closeall())
   #drc <- dr$client
   # url = "https://www.betfair.com.au/exchange/plus/football/competition/879931"
   drc$navigate(url)
   drc$maxWindowSize()
-  Sys.sleep(8)
+  Sys.sleep(2)
+  #browser()
+  
+  if(goto_football) {
+    elem = drc$findElement('a.navigation-link[href="football"]',using="css selector")
+    elem$clickElement()
+
+    view_by_options = drc$findElement("label.selected-option", using="css")
+    view_by_options$clickElement()
+    
+    view_options123 = drc$findElements('div.group-by-filter div.options-list span.option-list-item[ng-hide="vm.hide"]', using="css")
+    view_options123[[2]]$clickElement()
+    Sys.sleep(5)
+  }
   
   
   bf_csl_match_odds_html = drc$executeScript("return document.querySelector('html').outerHTML", args = list("dummy"))
-  drc$closeall(); rm(drc); rm(dr)
   
   teams = bf_csl_match_odds_html[[1]] %>%
     read_html %>%   
@@ -62,14 +75,19 @@ bf_matches_odds <- function(url) {
 b365_matches_odds <- function(url) {
   dr <- startChrome()
   drc <- dr$client
+  on.exit(drc$closeall())
   
   # url = "https://www.bet365.com.au/?rn=49941906763&stf=1#/AC/B1/C1/D13/E37844384/F2/"
   drc$navigate(url)
   drc$navigate(url)
   Sys.sleep(2)
-  #drc$maxWindowSize()
+  drc$maxWindowSize()
+  
+  #browser()
   b365_csl_match_odds_html = drc$executeScript("return document.querySelector('html').outerHTML", args = list("dummy"))[[1]] %>% 
     read_html
+  
+  #browser()
   
   selection = b365_csl_match_odds_html %>% 
     html_nodes("div.sl-CouponParticipantWithBookCloses_Name") %>% 
@@ -77,24 +95,34 @@ b365_matches_odds <- function(url) {
     purrr::map(~stringr::str_split_fixed(.x, " v ",2)) %>% 
     unlist
   
+  # sometimes if a match is in procession the selection can appear empty, in that case remove the empty one and the one above it
+  we = which(selection == "")
+  selection = selection[-c(we)]
+  
+  mathces_in_progress = we - 1:length(we)
+  
   odds2 = b365_csl_match_odds_html %>% 
     html_nodes("div.sl-MarketCouponValuesExplicit33.gl-Market_General.gl-Market_PWidth-12-3333") %>% 
     map(~.x %>% 
           html_nodes("div.gl-ParticipantOddsOnlyDarker.gl-ParticipantOddsOnly.gl-Participant_General span.gl-ParticipantOddsOnly_Odds") %>% 
-          html_text )%>% 
-    as.data.table
+          html_text )
   
+  lodds2 = length(odds2)
   
-  
-  data.table(
+  res = data.table(
     HomeTeam = selection[c(T,F)],
     AwayTeam = selection[c(F,T)],
-    odds_1 = odds2$V1 %>% as.numeric,
-    odds_x = odds2$V2 %>% as.numeric,
-    odds_2 = odds2$V3 %>% as.numeric,
+    odds_1 = odds2[seq(1,lodds2,by=3)] %>% unlist %>% as.numeric,
+    odds_x = odds2[seq(2,lodds2,by=3)] %>% unlist %>% as.numeric,
+    odds_2 = odds2[seq(3,lodds2,by=3)] %>% unlist %>% as.numeric,
     company_code = "b365",
     extraction_timestamp=Sys.time()
   )
+  
+  # these are the matches in progress
+  res[mathces_in_progress[c(F,T)]/2]
+  
+  res[-mathces_in_progress[c(F,T)]/2]
 }
 
 sb_matches_odds <- function(url)   {

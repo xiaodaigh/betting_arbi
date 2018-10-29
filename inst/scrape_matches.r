@@ -18,9 +18,11 @@ source("R/utility_fn.r")
 
 # load the database
 load_league = "epl"
-scrape_db <- fread("data/winner_scrape_db.csv")
+scrape_db <- fread("data/matches_scrape_db.csv")
 scrape_db1 = scrape_db[league==load_league,]
 
+
+# a = get_matches_odds("https://www.betfair.com.au/exchange/plus/football/competition/879931","betfair")
 # matches_odds = pmap_dfr(scrape_db1, function(...) {
 #   a = list(...)
 #   tryCatch({
@@ -31,8 +33,8 @@ scrape_db1 = scrape_db[league==load_league,]
 #     },
 #     finally = gc())
 # })
-#res = future.apply::future_lapply(1:nrow(scrape_db1), function(one_row) {
-res = lapply(1:nrow(scrape_db1), function(one_row) {
+res = future.apply::future_lapply(1:nrow(scrape_db1), function(one_row) {
+#res = lapply(1:nrow(scrape_db1), function(one_row) {
      a = scrape_db1[one_row,]
      tryCatch({
        return(get_matches_odds(a$url, a$company))
@@ -83,7 +85,8 @@ odds_all = matches_odds_copy %>%
   gather(key=odds_type, value=odds, -c(HomeTeam,AwayTeam, company_code)) %>% 
   filter(!is.na(odds)) %>% 
   as.data.table()
-  
+
+odds_all[,has_betfair:=sum(company_code == "betfair")>=1,.(HomeTeam,AwayTeam)]
 
 best_odds = odds_all[,.(best_odds = max(odds)),.(HomeTeam, AwayTeam, odds_type)]
 
@@ -94,7 +97,7 @@ odds_all_w_best =
   filter(odds >= best_odds) %>% 
   as.data.table
 
-odds_all_w_best1 = odds_all_w_best[,.(odds = mean(odds), company_codes=paste(company_code,collapse = ",")),.(HomeTeam, AwayTeam, odds_type)];odds_all_w_best1
+odds_all_w_best1 = odds_all_w_best[,.(odds = mean(odds), company_codes=paste(company_code,collapse = ","), has_betfair=any(has_betfair)),.(HomeTeam, AwayTeam, odds_type)];odds_all_w_best1
 
 odds_all_w_best2 = merge(
   odds_all_w_best1 %>% 
@@ -130,11 +133,16 @@ best_stake_dt = t(odds_all_w_best2[,mapply(best_stake, odds_1, odds_x, odds_2, S
 setnames(best_stake_dt,names(best_stake_dt),c("best_o1","best_ox","best_o2"))
 
 odds_all_w_best3 = cbind(odds_all_w_best2,best_stake_dt)
-View(odds_all_w_best3[
+
+odds_all_w_best3[,.N,.(HomeTeam,AwayTeam)]
+
+View(odds_all_w_best3)
+
+View(odds_all_w_best3[has_betfair==T,
   rowSums(data.table(odds_2_comp=="betfair",odds_1_comp=="betfair",odds_x_comp=="betfair"))==0
   ,.(HomeTeam,AwayTeam,paste(odds_1,best_o1,odds_1_comp,sep=" - "),paste(odds_2,best_o2,odds_2_comp,sep=" - "),paste(odds_x,best_ox,odds_x_comp,sep=" - "),odds_1_comp,odds_x_comp,odds_2_comp)])
 
-View(odds_all_w_best3[
+View(odds_all_w_best3[has_betfair==T,
   rowSums(data.table(odds_2_comp=="betfair",odds_1_comp=="betfair",odds_x_comp=="betfair"))<=1
   ,.(HomeTeam,AwayTeam,paste(odds_1,best_o1,odds_1_comp,sep=" - "),paste(odds_2,best_o2,odds_2_comp,sep=" - "),paste(odds_x,best_ox,odds_x_comp,sep=" - "),odds_1_comp,odds_x_comp,odds_2_comp)])
 

@@ -25,6 +25,13 @@ align_market <- function(market_company) {
 
 
 align_team2b365 <- function(team_company) {
+  teams_db = fread("data/team_alignment_db.csv")
+  
+  #browser()
+  replace_with = teams_db$team_bet365[match(team_company,teams_db$team1)]
+  replace_with[is.na(replace_with)] = team_company[is.na(replace_with)]
+  team_company = replace_with
+  
   sapply(team_company, function(team_company1) {
     if(is.na(team_company1)) {
       return(team_company1)

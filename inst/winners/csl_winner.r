@@ -8,10 +8,13 @@ pt <- proc.time()
 dr = RSelenium::rsDriver()
 
 drc = dr$client
+
+
+
 #on.exit(drc$closeall())
 
-source("align_functions.r")
-source("scrape_functions.r")
+source("r/align_functions.r")
+source("r/scrape_functions.r")
 
 csl_b365_winners = get_b365_winner_odds("csl")
 csl_uni_winners = get_uni_winner_odds("csl")

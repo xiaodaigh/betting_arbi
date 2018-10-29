@@ -10,18 +10,18 @@ dr = RSelenium::rsDriver()
 drc = dr$client
 #on.exit(drc$closeall())
 
-source("align_functions.r")
-source("scrape_functions.r")
+source("R/align_functions.r")
+source("R/scrape_functions.r")
 
 # Bet365 B365 -------------------------------------------------------------
 # typically these are odds that exists as team odds
 b365_winner_odds = get_b365_winner_odds("epl")
-wh_winner_odds = get_wh_winner_odds()
+#wh_winner_odds = get_wh_winner_odds()
 cb_winner_odds = get_cb_winner_odds()
 neds_winner_odds = get_neds_winner_odds()
 lad_winner_odds = get_lad_winner_odds()
 sb_winner_odds = get_sb_winner_odds()
-uni_winner_odds = get_uni_winner_odds()
+uni_winner_odds = get_uni_winner_odds("epl")
 tab_winner_odds = get_tab_winner_odds("epl")
 bf_winner_odds = get_bf_winner_odds("epl")
 bb_winner_odds = get_bb_winner_odds()
